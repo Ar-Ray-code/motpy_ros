@@ -38,7 +38,7 @@ $ ros2 launch motpy_ros face_tracking.launch.py
 
 - This program was created with reference to [this repository](https://github.com/wmuron/motpy/blob/master/examples/webcam_face_tracking.py).
 
-- Downloaded weights are saved for `${HOME}/.cache/motpy_ros/`.
+- Downloaded weights are saved in `${HOME}/.cache/motpy_ros/`.
 
 ### Subscribe topic
 
