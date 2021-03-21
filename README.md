@@ -55,3 +55,10 @@ $ ros2 launch motpy_ros face_tracking.launch.py
 
 - https://github.com/wmuron/motpy
 - https://github.com/ajaypaul2008/darknet_ros/tree/foxy/darknet_ros_msgs
+
+## About writer
+
+- Ar-Ray : Japanese student. 
+- Brog(Japanese) : https://ar-ray.hatenablog.com/
+- Twitter : https://twitter.com/Ray255Ar
+
