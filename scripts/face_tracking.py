@@ -70,7 +70,7 @@ class motpy2darknet(Node):
                             'order_size': 0, 'dim_size': 2,
                             'q_var_pos': 5000., 'r_var_pos': 0.1}
 
-        self.dt = 1 / 15.0  # assume 15 fps
+        self.dt = 1 / 60.0  # assume 15 fps
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
         self.motpy_detector = FaceDetector()
@@ -124,6 +124,7 @@ class motpy2darknet(Node):
             self.publish_d_msgs(tracks, msg)
 
             # preview the boxes on frame----------------------------------------
+            print(detections)
             for det in detections:
                 draw_detection(frame, det)
 

@@ -10,6 +10,7 @@ setup(
     packages=[],
     py_modules=[
         'scripts.face_tracking',
+        'scripts.darknet_tracking',
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -29,7 +30,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'face_tracking= scripts.face_tracking:ros_main',
+            'face_tracking = scripts.face_tracking:ros_main',
+            'darknet_tracking = scripts.darknet_tracking:ros_main',
         ],
     },
     data_files=[
