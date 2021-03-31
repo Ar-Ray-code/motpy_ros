@@ -9,17 +9,15 @@ from motpy.core import setup_logger
 from motpy.detector import BaseObjectDetector
 from motpy.testing_viz import draw_detection, draw_track
 
-import rclpy
-from rclpy.node import Node
+import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-
 from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
 
 logger = setup_logger(__name__, 'DEBUG', is_main=True)
 
 
-class motpy2darknet(Node):
+class motpy2darknet:
     def __init__(self):
 
         ## By run() function --------------------------------
@@ -27,21 +25,19 @@ class motpy2darknet(Node):
                             'order_size': 0, 'dim_size': 2,
                             'q_var_pos': 5000., 'r_var_pos': 0.1}
 
-        self.dt = 1 / 10.0  # assume 15 fps
+        self.dt = 1 / 60.0  # assume 15 fps
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
-        # self.motpy_detector = FaceDetector()
-
-        ## RCLPY 
-        super().__init__('motpy_ros')
-        self.pub = self.create_publisher(BoundingBoxes,"bounding_boxes", 1)
-        self.sub = self.create_subscription(BoundingBoxes,"darknet_ros/bounding_boxes",self.process_boxes_ros2,1)
-        self.sub_img = self.create_subscription(Image,"color/image_raw",self.process_image_ros2,1)
-
         self.bridge = CvBridge()
+        rospy.init_node('darknet_tracking')
+
+        self.pub = rospy.Publisher("bounding_boxes", BoundingBoxes, queue_size=1)
+        rospy.Subscriber("darknet_ros/bounding_boxes",BoundingBoxes,self.process_boxes_ros2,1)
+        rospy.Subscriber("camera/color/image_raw",Image,self.process_image_ros1,1)
+
+        rospy.spin()
 
     def bboxes2out_detections(self,bboxes):
-        # for(bbox)
         out_detections = []
         out_class_id = []
 
@@ -52,7 +48,7 @@ class motpy2darknet(Node):
             ymax = bbox.ymax
             confidence = bbox.probability
             box_class_id = bbox.id
-            if(bbox.class_id == 'car' or bbox.class_id == 'truck' or bbox.class_id == 'bus'):
+            if(bbox.Class == 'car' or bbox.Class == 'truck' or bbox.Class == 'bus'):
                 out_detections.append(Detection(box=[xmin, ymin, xmax, ymax], score=confidence))
                 out_class_id.append(box_class_id)
 
@@ -63,7 +59,7 @@ class motpy2darknet(Node):
         one_box = BoundingBox()
 
         one_box.id = int(track.id[:3], 16)
-        one_box.class_id = "face"
+        one_box.Class = track.Class
         one_box.probability = float(track.score)
         one_box.xmin = int(track.box[0])
         one_box.ymin = int(track.box[1])
@@ -89,9 +85,6 @@ class motpy2darknet(Node):
 
     def process_boxes_ros2(self, msg):
         try:
-            
-            # detections = self.motpy_detector.process_image(self.frame)
-
             detections, class_id = self.bboxes2out_detections(msg)
 
             self.tracker.step(detections)
@@ -121,14 +114,7 @@ class motpy2darknet(Node):
             print(err)
 
 def ros_main(args = None):
-    # os.makedirs(download_path, exist_ok=True)
-    rclpy.init(args=args)
-
     motpy2darknet_class = motpy2darknet()
-    rclpy.spin(motpy2darknet_class)
-
-    motpy2darknet_class.destroy_node()
-    rclpy.shutdown()
 
 if __name__ == "__main__":
     ros_main()

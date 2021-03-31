@@ -1,3 +1,4 @@
+#!/bin/python3
 import os
 from os.path import expanduser
 from typing import Sequence
@@ -9,11 +10,9 @@ from motpy.core import setup_logger
 from motpy.detector import BaseObjectDetector
 from motpy.testing_viz import draw_detection, draw_track
 
-import rclpy
-from rclpy.node import Node
+import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-
 from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
 
 logger = setup_logger(__name__, 'DEBUG', is_main=True)
@@ -62,7 +61,7 @@ class FaceDetector(BaseObjectDetector):
             
         return out_detections
 
-class motpy2darknet(Node):
+class motpy2darknet:
     def __init__(self):
 
         ## By run() function --------------------------------
@@ -74,18 +73,18 @@ class motpy2darknet(Node):
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
         self.motpy_detector = FaceDetector()
-
-        ## RCLPY 
-        super().__init__('motpy_ros')
-        self.pub = self.create_publisher(BoundingBoxes,"bounding_boxes", 1)
-        self.sub = self.create_subscription(Image,"image_raw",self.process_image_ros2,1)
         self.bridge = CvBridge()
+
+        rospy.init_node('motpy_ros')
+        rospy.Subscriber("camera/color/image_raw",Image,self.process_image_ros1)
+        self.pub = rospy.Publisher('bounding_boxes', BoundingBoxes, queue_size=1)
+        rospy.spin()
 
     def create_d_msgs_box(self, track):
         one_box = BoundingBox()
 
         one_box.id = int(track.id[:3], 16)
-        one_box.class_id = "face"
+        one_box.Class = "face"
         one_box.probability = float(track.score)
         one_box.xmin = int(track.box[0])
         one_box.ymin = int(track.box[1])
@@ -109,10 +108,10 @@ class motpy2darknet(Node):
         
         self.pub.publish(boxes)
 
-    def process_image_ros2(self, msg):
+    def process_image_ros1(self, msg):
         try:
             frame = self.bridge.imgmsg_to_cv2(msg,"bgr8")
-            frame = cv2.resize(frame, dsize=None, fx=0.5, fy=0.5)
+            frame = cv2.resize(frame, dsize=(640,360))
 
             # # run face detector on current frame
             
@@ -139,13 +138,7 @@ class motpy2darknet(Node):
 
 def ros_main(args = None):
     os.makedirs(download_path, exist_ok=True)
-    rclpy.init(args=args)
-
     motpy2darknet_class = motpy2darknet()
-    rclpy.spin(motpy2darknet_class)
-
-    motpy2darknet_class.destroy_node()
-    rclpy.shutdown()
 
 if __name__ == "__main__":
     ros_main()
