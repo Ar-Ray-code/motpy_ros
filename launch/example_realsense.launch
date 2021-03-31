@@ -1,7 +1,0 @@
- <?xml version="1.0" encoding="utf-8"?>
- 
- <launch>
-   <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
-   <node pkg="motpy_ros" name="face_tracking" type="face_tracking.py"/>
- 
- </launch>  

@@ -11,6 +11,7 @@ from motpy.detector import BaseObjectDetector
 from motpy.testing_viz import draw_detection, draw_track
 
 import rospy
+
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
@@ -33,10 +34,19 @@ class FaceDetector(BaseObjectDetector):
                  conf_threshold: float = 0.5) -> None:
         super(FaceDetector, self).__init__()
 
+        self.weights_url = rospy.get_param("~weights_url", WEIGHTS_URL)
+        self.config_url = rospy.get_param("~config_url", CONFIG_URL)
+
+        self.weights_path = rospy.get_param("~weights_path", WEIGHTS_PATH)
+        self.config_path = rospy.get_param("~config_path", CONFIG_PATH)
+
+        print(weights_url, "\n", config_url)
+        print(weights_path, "\n", config_path)
+
         if not os.path.isfile(weights_path) or not os.path.isfile(config_path):
             logger.debug('downloading model...')
-            urlretrieve(weights_url, weights_path)
-            urlretrieve(config_url, config_path)
+            urlretrieve(self.weights_url, weights_path)
+            urlretrieve(self.config_url, config_path)
 
         self.net = cv2.dnn.readNetFromCaffe(config_path, weights_path)
 
@@ -69,14 +79,20 @@ class motpy2darknet:
                             'order_size': 0, 'dim_size': 2,
                             'q_var_pos': 5000., 'r_var_pos': 0.1}
 
+        rospy.init_node('motpy_ros')
+
+        self.width = rospy.get_param("~tracking_size/width", 360)
+        self.height = rospy.get_param("~tracking_size/height", 240)
+        print( self.width, self.height)
+
         self.dt = 1 / 60.0  # assume 15 fps
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
         self.motpy_detector = FaceDetector()
         self.bridge = CvBridge()
 
-        rospy.init_node('motpy_ros')
         rospy.Subscriber("camera/color/image_raw",Image,self.process_image_ros1)
+        self.pub_image = rospy.Publisher("motpy/color/image_raw",Image,queue_size=1)
         self.pub = rospy.Publisher('bounding_boxes', BoundingBoxes, queue_size=1)
         rospy.spin()
 
@@ -111,7 +127,8 @@ class motpy2darknet:
     def process_image_ros1(self, msg):
         try:
             frame = self.bridge.imgmsg_to_cv2(msg,"bgr8")
-            frame = cv2.resize(frame, dsize=(640,360))
+            frame = cv2.resize(frame, dsize=(self.width,self.height))
+            self.pub_image.publish(self.bridge.cv2_to_imgmsg(frame,"bgr8"))
 
             # # run face detector on current frame
             

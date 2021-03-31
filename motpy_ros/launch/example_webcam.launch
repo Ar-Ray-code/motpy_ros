@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="movie_publisher" name="camera" type="webcam_pub">
+    <param name="camera_num" value="0" />
+  </node>
+  <node pkg="motpy_ros" name="face_tracking" type="face_tracking.py"/>
+ 
+</launch>  
