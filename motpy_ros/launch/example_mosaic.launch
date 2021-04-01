@@ -1,8 +1,5 @@
 <launch>
-    <node pkg="movie_publisher" name="camera" type="webcam_pub">
-        <param name="camera_num" type="int" value="0" />
-        <param name="camera_height" type="int" value="360" />
-        <param name="camera_width" type="int" value="640" />
+    <node pkg="uvc_camera" name="camera" type="uvc_camera_node">
     </node>
     
     <node pkg="motpy_ros" name="face_tracking" type="face_tracking.py" output="screen">
@@ -13,6 +10,9 @@
         <param name="tracking_size/width" value="640" />
         <param name="tracking_size/height" value="480" />
     </node>
-    <node pkg="motpy_ros" name="mosaic" type="mosaic_bbox.py"/>
+    <node pkg="motpy_ros" name="mosaic" type="mosaic_bbox.py">
+        <param name="tracking_size/width" value="640" />
+        <param name="tracking_size/height" value="360" />
+    </node>
  
 </launch>

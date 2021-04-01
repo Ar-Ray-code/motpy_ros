@@ -26,7 +26,7 @@ class mosaic_bbox(mosaic_class):
         self.width = rospy.get_param("~tracking_size/width", 360)
         self.height = rospy.get_param("~tracking_size/height", 240)
 
-        rospy.Subscriber("motpy/color/image_raw",Image,self.process_image_ros1)
+        rospy.Subscriber("motpy/image_raw",Image,self.process_image_ros1)
         rospy.Subscriber("/camera/depth/image_rect_raw",Image,self.process_depth)
         rospy.Subscriber("/bounding_boxes",BoundingBoxes,self.process_bbox)
 
@@ -44,7 +44,7 @@ class mosaic_bbox(mosaic_class):
                     m_person_depth = self.m_depth_image[(bbox.ymax+bbox.ymin)//2][(bbox.xmax+bbox.xmin)//2]
                     print(m_person_depth)
                 else :
-                    m_person_depth = 0
+                    m_person_depth = -1
 
                 cv2.putText(mosaiced, "id:"+str(bbox.id)+" dist:"+str(m_person_depth)+"mm", (bbox.xmin, bbox.ymin), cv2.FONT_HERSHEY_PLAIN, 1, (0,0, 255), 1, cv2.LINE_AA)
                 

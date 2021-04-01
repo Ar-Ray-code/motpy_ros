@@ -91,8 +91,8 @@ class motpy2darknet:
         self.motpy_detector = FaceDetector()
         self.bridge = CvBridge()
 
-        rospy.Subscriber("camera/color/image_raw",Image,self.process_image_ros1)
-        self.pub_image = rospy.Publisher("motpy/color/image_raw",Image,queue_size=1)
+        rospy.Subscriber("image_raw",Image,self.process_image_ros1)
+        self.pub_image = rospy.Publisher("motpy/image_raw",Image,queue_size=1)
         self.pub = rospy.Publisher('bounding_boxes', BoundingBoxes, queue_size=1)
         rospy.spin()
 
