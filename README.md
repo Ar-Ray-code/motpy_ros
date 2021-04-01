@@ -5,33 +5,35 @@ ROS example program using [motpy](https://github.com/wmuron/motpy).
 
 ## Dependencies
 
-- ROS2 Foxy
-- OpenCV
-- [darknet_ros_msgs](https://github.com/ajaypaul2008/darknet_ros/tree/foxy/darknet_ros_msgs)
+- ROS1 Noetic
+- OpenCV4
+- [darknet_ros_msgs](https://github.com/leggedrobotics/darknet_ros/tree/master/darknet_ros_msgs)
+- uvc_camera
 
 ## Installation
 
 ```shell
-$ sudo apt install ros-foxy-v4l2-camera
 $ pip3 install opencv-python motpy
+$ sudo apt install libv4l-dev
 
-$ source /opt/ros/foxy/setup.bash
+$ source /opt/ros/noetic/setup.bash
 $ cd ~
-$ mkdir -p ros2_ws/src
-$ cd ros2_ws/src
+$ mkdir -p ros1_ws/src
+$ cd ros1_ws/src
 $ git clone https://github.com/Ar-Ray-code/motpy_ros.git
+$ git clone https://github.com/ros-drivers/camera_umd.git
 $ cd motpy_ros
-$ git checkout motpy_ros
-$ cd ~/ros2_ws
-$ colcon build
+$ git checkout ros1-noetic
+$ cd ~/ros1_ws
+$ catkin_make
 ```
 
 ## Demo
 
 ```shell
-$ source /opt/ros/foxy/setup.bash
-$ source ~/ros2_ws/install/local_setup.bash
-$ ros2 launch motpy_ros face_tracking.launch.py
+$ source /opt/ros/noetic/setup.bash
+$ source ~/ros1_ws/devel/setup.bash
+$ roslaunch motpy_ros example_mosaic.launch
 ```
 
 ## About face_tracking.py
@@ -54,7 +56,7 @@ $ ros2 launch motpy_ros face_tracking.launch.py
 ## Reference
 
 - https://github.com/wmuron/motpy
-- https://github.com/ajaypaul2008/darknet_ros/tree/foxy/darknet_ros_msgs
+- https://github.com/leggedrobotics/darknet_ros/tree/master/darknet_ros_msgs
 
 ## About writer
 

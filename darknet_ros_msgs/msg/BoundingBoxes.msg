@@ -1,3 +1,3 @@
-std_msgs/Header header
-std_msgs/Header image_header
+Header header
+Header image_header
 BoundingBox[] bounding_boxes
