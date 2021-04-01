@@ -51,7 +51,6 @@ class mosaic_bbox(mosaic_class):
             cv2.imshow('mosaic', mosaiced)
             cv2.waitKey(1)
             
-
         except Exception as err:
             print(err)
 
