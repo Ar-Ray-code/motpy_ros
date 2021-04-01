@@ -34,7 +34,13 @@ $ catkin_make
 $ source /opt/ros/noetic/setup.bash
 $ source ~/ros1_ws/devel/setup.bash
 $ roslaunch motpy_ros example_mosaic.launch
+
 ```
+
+### Other launch files
+- `$ roslaunch motpy_ros example_webcam.launch`
+- `$ roslaunch motpy_ros example_realsense.launch`
+
 
 ## About face_tracking.py
 
