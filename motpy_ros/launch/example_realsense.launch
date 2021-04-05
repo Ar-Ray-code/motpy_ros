@@ -13,4 +13,5 @@
         <param name="tracking_size/width" value="640" />
         <param name="tracking_size/height" value="360" />
     </node>
+    <node pkg="rqt_graph" name="rqt_graph" type="rqt_graph"/>
 </launch>  
