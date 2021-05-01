@@ -83,6 +83,7 @@ class motpy2darknet:
 
         self.width = rospy.get_param("~tracking_size/width", 360)
         self.height = rospy.get_param("~tracking_size/height", 240)
+        self.imshow_isview = rospy.get_param("~imshow_isshow", 1)
         print( self.width, self.height)
 
         self.dt = 1 / 60.0  # assume 15 fps
@@ -147,8 +148,9 @@ class motpy2darknet:
             for track in tracks:
                 draw_track(frame, track)
 
-            cv2.imshow('frame', frame)
-            cv2.waitKey(int(1000 * self.dt))
+            if self.imshow_isview:
+                cv2.imshow('frame', frame)
+                cv2.waitKey(int(1000 * self.dt))
 
         except Exception as err:
             print(err)
