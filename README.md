@@ -1,7 +1,5 @@
 # motpy_ros
-ROS example program using [motpy](https://github.com/wmuron/motpy).
-
-![example](pictures_for_readme/example.jpg)
+ROS example programs using [motpy](https://github.com/wmuron/motpy).
 
 ## Dependencies
 
@@ -9,6 +7,7 @@ ROS example program using [motpy](https://github.com/wmuron/motpy).
 - OpenCV4
 - [darknet_ros_msgs](https://github.com/leggedrobotics/darknet_ros/tree/master/darknet_ros_msgs)
 - ros-noetic-usb_cam
+- [motpy](https://github.com/wmuron/motpy)
 
 ## Installation
 
@@ -30,7 +29,7 @@ $ catkin_make
 
 
 
-## Demo 1(example_mosaic)
+## Demo (example_mosaic)
 
 Connect your webcam (/dev/video0) and execute the following commands.
 
@@ -40,7 +39,9 @@ $ source ~/ros1_ws/devel/setup.bash
 $ roslaunch motpy_ros example_mosaic.launch
 ```
 
-![Rqt_graph_example_mosaic](pictures_for_readme/Rqt_graph_example_mosaic.png)
+![tracking_mosaic](../../../Pictures/tracking_mosaic.png)
+
+
 
 ### The role of each Node is as follows
 
@@ -49,13 +50,15 @@ $ roslaunch motpy_ros example_mosaic.launch
 - darknet_tracking : Tracking boundingboxes by motpy.
 - mosaic_bbox : Display tracking image with mosaic.
 
-![tracking](pictures_for_readme/tracking.png)
+![Rqt_graph_example_mosaic](pictures_for_readme/Rqt_graph_example_mosaic.png)
 
-About topic
 
-`$ rostopic echo /tracking_data/bounding_boxes`
 
-```txt
+### About topic
+
+Run `$ rostopic echo /tracking_data/bounding_boxes` to check bounding_boxes topic
+
+```bash
 header: 
   seq: 464
   stamp: 
@@ -75,7 +78,7 @@ bounding_boxes:
     ymin: 103
     xmax: 272
     ymax: 181
-    id: 3711
+    id: 728
     Class: "face"
   - 
     probability: 0.8840379995412154
@@ -83,12 +86,45 @@ bounding_boxes:
     ymin: 111
     xmax: 176
     ymax: 236
-    id: 2153
+    id: 3840
     Class: "face"
-
+...
 ```
 
+## Using Service
 
+- motpy_bbox.srv can be turned into an object tracking program by incorporating motpy into object detection. service server needs to be passed a boundingbox message (darknet_ros_msgs).
+
+Example launch file : launch/example_srv.launch
+
+
+
+## Use with darknet_ros
+
+- motpy_ros can be used in conjunction with [darknet_ros](https://github.com/leggedrobotics/darknet_ros) to provide object tracking that takes advantage of darknet's strengths.
+
+Example launch file : launch/darknet_tracking.launch
+
+
+
+## Use with Arduino
+
+- Based on the data tracked by motpy_ros, you can create a program to track a single object with a servo motor.
+- rosserial_arduino is required.
+
+
+
+Example launch file : launch/tracking_servo.launch
+
+- [Arduino Program](https://github.com/ros-drivers/rosserial/blob/noetic-devel/rosserial_arduino/src/ros_lib/examples/ServoControl/ServoControl.pde)：Use ros_lib/examples/ServoControl/ServoControl.ino and Rewrite 13 to 9 .
+
+※ If there are more than two people, the operation may not be stable.
+
+![tracking](pictures_for_readme/tracking.png)
+
+
+
+![tracking](pictures_for_readme/tracking.gif)
 
 ## Reference
 
@@ -98,6 +134,6 @@ bounding_boxes:
 ## About writer
 
 - Ar-Ray : Japanese student. 
-- Blog(Japanese) : https://ar-ray.hatenablog.com/
+- Blog (Japanese) : https://ar-ray.hatenablog.com/
 - Twitter : https://twitter.com/Ray255Ar
 

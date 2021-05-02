@@ -12,7 +12,7 @@ class darknet_tracking:
                             'order_size': 0, 'dim_size': 2,
                             'q_var_pos': 5000., 'r_var_pos': 0.1}
 
-        self.dt = 1 / 60.0  # assume 15 fps
+        self.dt = 1 / 10.0  # assume 15 fps
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
         rospy.init_node('darknet_tracking')
