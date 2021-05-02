@@ -83,8 +83,8 @@ class motpy2darknet:
 
         rospy.init_node('motpy_ros')
 
-        self.width = rospy.get_param("~tracking_size/width", 360)
-        self.height = rospy.get_param("~tracking_size/height", 240)
+        self.width = rospy.get_param("~frame_size/width", 360)
+        self.height = rospy.get_param("~frame_size/height", 240)
         print( self.width, self.height)
 
         self.dt = 1 / 60.0  # assume 15 fps

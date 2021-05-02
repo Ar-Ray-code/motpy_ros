@@ -46,7 +46,9 @@ class motpy_srv:
         
         boxes = BoundingBoxes()
         boxes.header = bboxes_msg.header
-
+        if(len(bboxes_msg.bounding_boxes)==0):
+            return boxes
+            
         for track in tracks:
             boxes.bounding_boxes.append(self.create_d_msgs_box(track, bboxes_msg.bounding_boxes[i].Class))
             i = i + 1

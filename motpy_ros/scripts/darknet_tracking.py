@@ -1,115 +1,78 @@
-# import os
-# from os.path import expanduser
-# from typing import Sequence
-# from urllib.request import urlretrieve
+#!/bin/python3
 
-# import cv2
-# from motpy import Detection, MultiObjectTracker, NpImage, Box, Track
-# from motpy.core import setup_logger
-# from motpy.detector import BaseObjectDetector
-# from motpy.testing_viz import draw_detection, draw_track
+from motpy import Detection, MultiObjectTracker
+import rospy
+from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
 
-# import rospy
-# from sensor_msgs.msg import Image
-# from cv_bridge import CvBridge
-# from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
+class darknet_tracking:
+    def __init__(self) -> None:
 
-# logger = setup_logger(__name__, 'DEBUG', is_main=True)
+        ## By run() function --------------------------------
+        self.model_spec = {'order_pos': 1, 'dim_pos': 2,
+                            'order_size': 0, 'dim_size': 2,
+                            'q_var_pos': 5000., 'r_var_pos': 0.1}
 
+        self.dt = 1 / 60.0  # assume 15 fps
+        self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
-# class motpy2darknet:
-#     def __init__(self):
+        rospy.init_node('darknet_tracking')
 
-#         ## By run() function --------------------------------
-#         self.model_spec = {'order_pos': 1, 'dim_pos': 2,
-#                             'order_size': 0, 'dim_size': 2,
-#                             'q_var_pos': 5000., 'r_var_pos': 0.1}
+        self.pub = rospy.Publisher("tracking_data/bounding_boxes", BoundingBoxes, queue_size=1)
+        rospy.Subscriber("bounding_boxes",BoundingBoxes,self.process_boxes_ros1)
 
-#         self.dt = 1 / 60.0  # assume 15 fps
-#         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
+        rospy.spin()
 
-#         self.bridge = CvBridge()
-#         rospy.init_node('darknet_tracking')
-
-#         self.pub = rospy.Publisher("bounding_boxes", BoundingBoxes, queue_size=1)
-#         rospy.Subscriber("darknet_ros/bounding_boxes",BoundingBoxes,self.process_boxes_ros2,1)
-#         rospy.Subscriber("camera/color/image_raw",Image,self.process_image_ros1,1)
-
-#         rospy.spin()
-
-#     def bboxes2out_detections(self,bboxes):
-#         out_detections = []
-#         out_class_id = []
-
-#         for bbox in bboxes.bounding_boxes:
-#             xmin = bbox.xmin
-#             xmax = bbox.xmax
-#             ymin = bbox.ymin
-#             ymax = bbox.ymax
-#             confidence = bbox.probability
-#             box_class_id = bbox.id
-#             if(bbox.Class == 'car' or bbox.Class == 'truck' or bbox.Class == 'bus'):
-#                 out_detections.append(Detection(box=[xmin, ymin, xmax, ymax], score=confidence))
-#                 out_class_id.append(box_class_id)
-
-#         return out_detections, out_class_id
-
-
-#     def create_d_msgs_box(self, track):
-#         one_box = BoundingBox()
-
-#         one_box.id = int(track.id[:3], 16)
-#         one_box.Class = track.Class
-#         one_box.probability = float(track.score)
-#         one_box.xmin = int(track.box[0])
-#         one_box.ymin = int(track.box[1])
-#         one_box.xmax = int(track.box[2])
-#         one_box.ymax = int(track.box[3])
-
-#         return one_box
-
-#     def publish_d_msgs(self, tracks, img_msg):
+    def bboxes2out_detections(self, bboxes:BoundingBoxes):
+        out_detections = []
+        out_class_id = []
+        out_class_name = []
         
-#         boxes = BoundingBoxes()
-#         boxes.header = img_msg.header
+        for bbox in bboxes.bounding_boxes:
+            out_class_name.append(bbox.Class)
+            out_detections.append(Detection(box=[bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax], score=bbox.probability))
+            out_class_id.append(bbox.id)
+
+        return out_detections, out_class_id, out_class_name
+
+    def create_d_msgs_box(self, track, bbox_msg:BoundingBox) -> BoundingBox:
+        one_box = BoundingBox()
+
+        one_box.id = int(track.id[:3], 16)
+        one_box.Class = bbox_msg.Class
+        one_box.probability = float(track.score)
+        one_box.xmin = int(track.box[0])
+        one_box.ymin = int(track.box[1])
+        one_box.xmax = int(track.box[2])
+        one_box.ymax = int(track.box[3])
+
+        return one_box
+
+    def publish_d_msgs(self, tracks, boxes_msg:BoundingBoxes) -> None:
         
-#         for track in tracks:
-#             boxes.bounding_boxes.append(self.create_d_msgs_box(track))
+        boxes = BoundingBoxes()
+        boxes.header = boxes_msg.header
+        i = 0
+        if(len(boxes_msg.bounding_boxes)==0):
+            self.pub.publish(boxes)
+            return
 
-#         self.pub.publish(boxes)
+        for track in tracks:
+            boxes.bounding_boxes.append(self.create_d_msgs_box(track, boxes_msg.bounding_boxes[i]))
+            i = i+1
 
-#     def process_boxes_ros2(self, msg):
-#         try:
-#             detections, class_id = self.bboxes2out_detections(msg)
+        self.pub.publish(boxes)
 
-#             self.tracker.step(detections)
-#             tracks = self.tracker.active_tracks(min_steps_alive=3)
+    def process_boxes_ros1(self, msg:BoundingBoxes) -> None:
+        detections, class_id, class_name = self.bboxes2out_detections(msg)
 
-#             self.publish_d_msgs(tracks, msg)
+        self.tracker.step(detections)
+        tracks = self.tracker.active_tracks(min_steps_alive=3)
 
-#             # preview the boxes on self.frame----------------------------------------
-#             # print(detections)
-#             for det in detections:
-#                 draw_detection(self.frame, det)
+        self.publish_d_msgs(tracks, msg)
+        print(detections)
 
-#             for track in tracks:
-#                 draw_track(self.frame, track)
+def ros_main(args = None) -> None:
+    darknet_tracking_class = darknet_tracking()
 
-#             cv2.imshow('tracking', self.frame)
-#             cv2.waitKey(int(1000 * self.dt))
-
-#         except Exception as err:
-#             print(err)
-
-#     def process_image_ros2(self, msg):
-#         try:
-#             self.frame = self.bridge.imgmsg_to_cv2(msg,"bgr8")
-
-#         except Exception as err:
-#             print(err)
-
-# def ros_main(args = None):
-#     motpy2darknet_class = motpy2darknet()
-
-# if __name__ == "__main__":
-#     ros_main()
+if __name__ == "__main__":
+    ros_main()

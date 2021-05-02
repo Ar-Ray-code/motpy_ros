@@ -1,8 +1,16 @@
 <launch>
-  <node pkg="uvc_camera" name="camera" type="uvc_camera_node">
-      <remap from="/usb_cam/image_raw" to="/camera/color/image_raw"/>
+  <!-- Image source (Camera) -->
+  <node pkg="usb_cam" name="camera" type="usb_cam_node">
   </node>
+
+  <!-- Service node -->
   <node pkg="motpy_ros" name="tracking_srv" type="tracking_srv.py"/>
-  <node pkg="motpy_ros" name="face_tracking" type="face_tracking_using_srv.py"/>
+
+  <!-- Using Service node -->
+  <node pkg="motpy_ros" name="face_tracking" type="face_tracking_using_srv.py">
+    <remap from="image_raw" to="/camera/image_raw"/>
+  </node>
+
+  <!-- Rqt_graph -->
   <node pkg="rqt_graph" name="rqt_graph" type="rqt_graph"/>
 </launch> 
