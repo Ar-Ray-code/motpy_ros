@@ -39,7 +39,7 @@ $ source ~/ros1_ws/devel/setup.bash
 $ roslaunch motpy_ros example_mosaic.launch
 ```
 
-![tracking_mosaic](../../../Pictures/tracking_mosaic.png)
+![tracking_mosaic](pictures_for_readme/tracking_mosaic.png)
 
 
 
