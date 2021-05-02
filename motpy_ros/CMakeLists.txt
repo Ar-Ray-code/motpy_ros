@@ -1,17 +1,28 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(motpy_ros)
 
-find_package(catkin REQUIRED COMPONENTS rospy)
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
-
-catkin_package(
+find_package(catkin REQUIRED COMPONENTS
+ rospy
+ darknet_ros_msgs
+ message_generation
 )
 
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
-# add_service_files(
+# add_message_files(
 #   FILES
-#   srv/motpy_bbox.srv
+#   motpy_bbox.msg
 # )
+add_service_files(
+  FILES
+  motpy_bbox.srv
+)
+generate_messages(
+  DEPENDENCIES
+  darknet_ros_msgs
+)
+catkin_package(
+  CATKIN_DEPENDS
+  rospy
+  message_generation
+)

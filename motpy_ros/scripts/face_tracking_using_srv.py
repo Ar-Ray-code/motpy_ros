@@ -16,6 +16,8 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
 
+from motpy_ros.srv import motpy_bbox
+
 logger = setup_logger(__name__, 'DEBUG', is_main=True)
 home = expanduser("~")
 download_path = home+'/.cache/motpy_ros/face_tracking/'
@@ -81,8 +83,8 @@ class motpy2darknet:
 
         rospy.init_node('motpy_ros')
 
-        self.width = rospy.get_param("~tracking_size/width", 360)
-        self.height = rospy.get_param("~tracking_size/height", 240)
+        self.width = rospy.get_param("~frame_size/width", 360)
+        self.height = rospy.get_param("~frame_size/height", 240)
         print( self.width, self.height)
 
         self.dt = 1 / 60.0  # assume 15 fps
@@ -93,60 +95,54 @@ class motpy2darknet:
 
         rospy.Subscriber("image_raw",Image,self.process_image_ros1)
         self.pub_image = rospy.Publisher("motpy/image_raw",Image,queue_size=1)
-        self.pub = rospy.Publisher('bounding_boxes', BoundingBoxes, queue_size=1)
         rospy.spin()
 
-    def create_d_msgs_box(self, track):
+    def darknet2tracks(self, bboxes):
+        out_detections = []
+        for bbox in bboxes.bounding_boxes:
+            out_detections.append(Track(id=str(bbox.id),box=[bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax], score=bbox.probability))
+        return out_detections
+
+    def face_detect2darknet(self, track):
         one_box = BoundingBox()
 
-        one_box.id = int(track.id[:3], 16)
+        one_box.id = 0
         one_box.Class = "face"
-        one_box.probability = float(track.score)
         one_box.xmin = int(track.box[0])
         one_box.ymin = int(track.box[1])
         one_box.xmax = int(track.box[2])
         one_box.ymax = int(track.box[3])
-
+        one_box.probability = float(track.score)
         return one_box
-
-    def publish_d_msgs(self, tracks, img_msg):
-        
-        boxes = BoundingBoxes()
-        boxes.header = img_msg.header
-        
-        for track in tracks:
-            boxes.bounding_boxes.append(self.create_d_msgs_box(track))
-
-        print("boxes--------------------")
-        for box_print in boxes.bounding_boxes:
-            print(box_print)
-        print("\n\n")
-        
-        self.pub.publish(boxes)
 
     def process_image_ros1(self, msg):
         try:
+            detect2darknet = BoundingBoxes()
+
             frame = self.bridge.imgmsg_to_cv2(msg,"bgr8")
             frame = cv2.resize(frame, dsize=(self.width,self.height))
             self.pub_image.publish(self.bridge.cv2_to_imgmsg(frame,"bgr8"))
 
-            # # run face detector on current frame
-            
             detections = self.motpy_detector.process_image(frame)
+            print("0")
+            for detection in detections:
+                detect2darknet.bounding_boxes.append(self.face_detect2darknet(detection))
 
-            self.tracker.step(detections)
-            tracks = self.tracker.active_tracks(min_steps_alive=3)
-
-            self.publish_d_msgs(tracks, msg)
-
-            # preview the boxes on frame----------------------------------------
             print(detections)
             for det in detections:
-                draw_detection(frame, det)
+                draw_detection(frame, det)            
+            # tracking ------------------------------------------------------------
+            try:
+                track_faces_module = rospy.ServiceProxy('detect2tracking', motpy_bbox)
+                track_bboxes = track_faces_module(detect2darknet).tracking_bboxes
 
-            for track in tracks:
-                draw_track(frame, track)
-
+                tracks = self.darknet2tracks(track_bboxes)
+                for track in tracks:
+                    draw_track(frame,track)
+            except:
+                pass
+            # preview the boxes on frame----------------------------------------
+            
             cv2.imshow('frame', frame)
             cv2.waitKey(int(1000 * self.dt))
 

@@ -23,8 +23,9 @@ class mosaic_bbox(mosaic_class):
 
         rospy.init_node('mosaic_bbox')
 
-        self.width = rospy.get_param("~tracking_size/width", 360)
-        self.height = rospy.get_param("~tracking_size/height", 240)
+        self.width = rospy.get_param("~frame_size/width", 360)
+        self.height = rospy.get_param("~frame_size/height", 240)
+        self.imshow_isview = rospy.get_param("~imshow_isshow", 1)
 
         rospy.Subscriber("motpy/image_raw",Image,self.process_image_ros1)
         rospy.Subscriber("/camera/depth/image_rect_raw",Image,self.process_depth)
@@ -46,10 +47,11 @@ class mosaic_bbox(mosaic_class):
                 else :
                     m_person_depth = -1
 
-                cv2.putText(mosaiced, "id:"+str(bbox.id)+" dist:"+str(m_person_depth)+"mm", (bbox.xmin, bbox.ymin), cv2.FONT_HERSHEY_PLAIN, 1, (0,0, 255), 1, cv2.LINE_AA)
-                
-            cv2.imshow('mosaic', mosaiced)
-            cv2.waitKey(1)
+                cv2.putText(mosaiced, "id:"+str(bbox.id)+" dist:"+str(m_person_depth)+"mm", (bbox.xmin, bbox.ymin), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,0), 1, cv2.LINE_AA)
+            
+            if self.imshow_isview:
+                cv2.imshow('mosaic', mosaiced)
+                cv2.waitKey(1)
             
         except Exception as err:
             print(err)

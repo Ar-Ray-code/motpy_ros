@@ -12,5 +12,13 @@
   <build_depend>rospy</build_depend>
   <build_export_depend>rospy</build_export_depend>
   <exec_depend>rospy</exec_depend>
+  
+  <build_depend>darknet_ros_msgs</build_depend>
+  <build_export_depend>darknet_ros_msgs</build_export_depend>
+  <exec_depend>darknet_ros_msgs</exec_depend>
+  
+  <build_depend>message_generation</build_depend>
+  <build_export_depend>message_generation</build_export_depend>
+  <exec_depend>message_generation</exec_depend>
 
 </package>
