@@ -31,7 +31,7 @@ class FaceDetector:
                  weights_path: str = WEIGHTS_PATH,
                  config_url: str = CONFIG_URL,
                  config_path: str = CONFIG_PATH,
-                 conf_threshold: float = 0.5) -> None:
+                 conf_threshold: float = 0.3) -> None:
         super(FaceDetector, self).__init__()
 
         self.weights_url = rospy.get_param("~weights_url", WEIGHTS_URL)

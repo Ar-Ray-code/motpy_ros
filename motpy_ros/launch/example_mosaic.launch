@@ -6,19 +6,19 @@
 
   <!-- Face detect -->
   <node pkg="motpy_ros" name="face_detector" type="face_detect.py">
-    <param name="frame_size/width" value="480"/>
-    <param name="frame_size/height" value="360"/>
+    <param name="frame_size/width" value="854"/>
+    <param name="frame_size/height" value="480"/>
     <param name="imshow_isshow" value="0"/>
   </node>
   
   <!-- Object Tracking -->
-  <node pkg="motpy_ros" name="darknet_tracking" type="darknet_tracking.py">
+  <node pkg="motpy_ros" name="darknet_tracking" type="darknet_tracking.py" output="screen">
   </node>
 
   <!-- View as mosaic -->>
   <node pkg="motpy_ros" name="mosaic_bbox" type="mosaic_bbox.py">
-    <param name="frame_size/width" value="480"/>
-    <param name="frame_size/height" value="360"/>
+    <param name="frame_size/width" value="854"/>
+    <param name="frame_size/height" value="480"/>
     <remap from="bounding_boxes" to="/tracking_data/bounding_boxes"/>
     <remap from="motpy/image_raw" to="/camera/color/image_raw"/>
     <param name="imshow_isshow" value="1"/>
