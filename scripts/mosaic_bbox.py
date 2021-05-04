@@ -40,9 +40,9 @@ class mosaic_bbox(Node):
         self.height = self.get_parameter('frame_size/height').value
         self.imshow_isshow = self.get_parameter('imshow_isshow').value
 
-        self.sub = self.create_subscription(Image,"motpy/image_raw",self.process_image_ros2, 10)
-        self.sub = self.create_subscription(Image,"camera/depth/image_rect_raw",self.process_depth, 10)
-        self.sub = self.create_subscription(BoundingBoxes,"bounding_boxes",self.process_bbox, 10)
+        self.create_subscription(Image,"motpy/image_raw",self.process_image_ros2, 10)
+        self.create_subscription(Image,"camera/depth/image_rect_raw",self.process_depth, 10)
+        self.create_subscription(BoundingBoxes,"bounding_boxes",self.process_bbox, 10)
 
     def process_bbox(self, msg):
         try:
