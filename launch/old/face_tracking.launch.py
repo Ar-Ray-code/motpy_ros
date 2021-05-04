@@ -10,12 +10,5 @@ def generate_launch_description():
 
     return launch.LaunchDescription([
         webcam,
-        motpy_ros,
-        
-        launch.actions.RegisterEventHandler(
-            event_handler=launch.event_handlers.OnProcessExit(
-                target_action=motpy_ros,
-                on_exit=[launch.actions.EmitEvent(
-                    event=launch.events.Shutdown())],
-            )),
+        motpy_ros
     ])

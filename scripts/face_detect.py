@@ -1,10 +1,11 @@
+#!/bin/python3
 import os
 from os.path import expanduser
 from typing import Sequence
 from urllib.request import urlretrieve
 
 import cv2
-from motpy import Detection, MultiObjectTracker, NpImage, Box, Track
+from motpy import Detection,  NpImage, Box, Track
 from motpy.core import setup_logger
 from motpy.detector import BaseObjectDetector
 from motpy.testing_viz import draw_detection, draw_track
@@ -18,7 +19,7 @@ from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
 
 logger = setup_logger(__name__, 'DEBUG', is_main=True)
 home = expanduser("~")
-download_path = home+'/.cache/motpy_ros/face_tracking/'
+download_path = home+'/.cache/face_detector/face_tracking/'
 
 WEIGHTS_URL = 'https://github.com/opencv/opencv_3rdparty/raw/dnn_samples_face_detector_20170830/res10_300x300_ssd_iter_140000.caffemodel'
 WEIGHTS_PATH = download_path+'opencv_face_detector.caffemodel'
@@ -31,13 +32,17 @@ class FaceDetector(BaseObjectDetector):
                  weights_path: str = WEIGHTS_PATH,
                  config_url: str = CONFIG_URL,
                  config_path: str = CONFIG_PATH,
-                 conf_threshold: float = 0.5) -> None:
+                 conf_threshold: float = 0.3) -> None:
         super(FaceDetector, self).__init__()
+
+
+        print(weights_url, "\n", config_url)
+        print(weights_path, "\n", config_path)
 
         if not os.path.isfile(weights_path) or not os.path.isfile(config_path):
             logger.debug('downloading model...')
-            urlretrieve(weights_url, weights_path)
-            urlretrieve(config_url, config_path)
+            urlretrieve(self.weights_url, weights_path)
+            urlretrieve(self.config_url, config_path)
 
         self.net = cv2.dnn.readNetFromCaffe(config_path, weights_path)
 
@@ -62,29 +67,52 @@ class FaceDetector(BaseObjectDetector):
             
         return out_detections
 
-class motpy2darknet(Node):
+class cv2dnn2darknet(Node):
     def __init__(self):
 
-        ## By run() function --------------------------------
-        self.model_spec = {'order_pos': 1, 'dim_pos': 2,
-                            'order_size': 0, 'dim_size': 2,
-                            'q_var_pos': 5000., 'r_var_pos': 0.1}
-
-        self.dt = 1 / 60.0  # assume 15 fps
-        self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
-
-        self.motpy_detector = FaceDetector()
-
         ## RCLPY 
-        super().__init__('motpy_ros')
-        self.pub = self.create_publisher(BoundingBoxes,"bounding_boxes", 1)
-        self.sub = self.create_subscription(Image,"image_raw",self.process_image_ros2,1)
+        super().__init__('face_detect')
+
+        # ==============================================================
+
+        self.declare_parameter('frame_size/width',360)
+        self.declare_parameter('frame_size/height',240)
+        self.declare_parameter('imshow_isshow',1)
+
+        self.declare_parameter('weights_url', WEIGHTS_URL)
+        self.declare_parameter('config_url', CONFIG_URL)
+        self.declare_parameter('weights_path', WEIGHTS_PATH)
+        self.declare_parameter('config_path', CONFIG_PATH)
+
+        # ==============================================================
+
+        self.width = self.get_parameter('frame_size/width').value
+        self.height = self.get_parameter('frame_size/height').value
+        self.imshow_isshow = self.get_parameter('imshow_isshow').value
+
+        self.weights_url = self.get_parameter('weights_url').value
+        self.config_url = self.get_parameter('config_url').value
+
+        self.weights_path = self.get_parameter('weights_path').value
+        self.config_path = self.get_parameter('config_path').value
+
+        # ==============================================================
+
+        print( self.width, self.height)
+
+        self.sub = self.create_subscription(Image,"camera/color/image_raw",self.process_image_ros2, 10)
+        self.pub_image = self.create_publisher(Image,"motpy/image_raw", 10)
+        self.pub = self.create_publisher(BoundingBoxes,'bounding_boxes', 10)
+
+        # ==============================================================
+
+        self.motpy_detector = FaceDetector(weights_url=self.weights_url, weights_path=self.weights_path, config_url=self.config_url, config_path=self.config_path)
         self.bridge = CvBridge()
 
     def create_d_msgs_box(self, track):
         one_box = BoundingBox()
 
-        one_box.id = int(track.id[:3], 16)
+        one_box.id = 0
         one_box.class_id = "face"
         one_box.probability = float(track.score)
         one_box.xmin = int(track.box[0])
@@ -112,27 +140,22 @@ class motpy2darknet(Node):
     def process_image_ros2(self, msg):
         try:
             frame = self.bridge.imgmsg_to_cv2(msg,"bgr8")
-            frame = cv2.resize(frame, dsize=None, fx=0.5, fy=0.5)
+            frame = cv2.resize(frame, dsize=(self.width,self.height))
+            self.pub_image.publish(self.bridge.cv2_to_imgmsg(frame,"bgr8"))
 
             # # run face detector on current frame
             
             detections = self.motpy_detector.process_image(frame)
-
-            self.tracker.step(detections)
-            tracks = self.tracker.active_tracks(min_steps_alive=3)
-
-            self.publish_d_msgs(tracks, msg)
+            self.publish_d_msgs(detections, msg)
 
             # preview the boxes on frame----------------------------------------
             print(detections)
             for det in detections:
                 draw_detection(frame, det)
 
-            for track in tracks:
-                draw_track(frame, track)
-
-            cv2.imshow('frame', frame)
-            cv2.waitKey(int(1000 * self.dt))
+            if self.imshow_isshow:
+                cv2.imshow('frame', frame)
+                cv2.waitKey(1)
 
         except Exception as err:
             print(err)
@@ -141,10 +164,10 @@ def ros_main(args = None):
     os.makedirs(download_path, exist_ok=True)
     rclpy.init(args=args)
 
-    motpy2darknet_class = motpy2darknet()
-    rclpy.spin(motpy2darknet_class)
+    cv2dnn2darknet_class = cv2dnn2darknet()
+    rclpy.spin(cv2dnn2darknet_class)
 
-    motpy2darknet_class.destroy_node()
+    cv2dnn2darknet_class.destroy_node()
     rclpy.shutdown()
 
 if __name__ == "__main__":

@@ -9,8 +9,9 @@ setup(
     version='0.0.0',
     packages=[],
     py_modules=[
-        'scripts.face_tracking',
         'scripts.darknet_tracking',
+        'scripts.face_detect',
+        'scripts.mosaic_bbox',
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -30,8 +31,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'face_tracking = scripts.face_tracking:ros_main',
             'darknet_tracking = scripts.darknet_tracking:ros_main',
+            'face_detect = scripts.face_detect:ros_main',
+            'mosaic_bbox = scripts.mosaic_bbox:ros_main',
         ],
     },
     data_files=[
