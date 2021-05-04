@@ -8,7 +8,7 @@
   <!-- Use YOLOv2 -->
   <include file="$(find darknet_ros)/launch/darknet_ros.launch">
     <arg name="network_param_file"    value="$(find darknet_ros)/config/yolov2.yaml"/>
-    <arg name="image" value="/camera/color/image_raw" />>
+    <arg name="image" value="/camera/color/image_raw" />
   </include>
   
   <!-- Object Tracking -->
