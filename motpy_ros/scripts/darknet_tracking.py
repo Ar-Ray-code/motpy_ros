@@ -12,8 +12,10 @@ class darknet_tracking:
                             'order_size': 0, 'dim_size': 2,
                             'q_var_pos': 5000., 'r_var_pos': 0.1}
 
-        self.dt = 1 / 10.0  # assume 15 fps
+        self.dt = 1 / 30.0  # assume 15 fps
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
+
+        self.tag = 'face'
 
         rospy.init_node('darknet_tracking')
 
@@ -24,21 +26,17 @@ class darknet_tracking:
 
     def bboxes2out_detections(self, bboxes:BoundingBoxes):
         out_detections = []
-        out_class_id = []
-        out_class_name = []
         
         for bbox in bboxes.bounding_boxes:
-            out_class_name.append(bbox.Class)
             out_detections.append(Detection(box=[bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax], score=bbox.probability))
-            out_class_id.append(bbox.id)
+            
+        return out_detections
 
-        return out_detections, out_class_id, out_class_name
-
-    def create_d_msgs_box(self, track, bbox_msg:BoundingBox) -> BoundingBox:
+    def create_d_msgs_box(self, track, class_tag:str) -> BoundingBox:
         one_box = BoundingBox()
 
         one_box.id = int(track.id[:3], 16)
-        one_box.Class = bbox_msg.Class
+        one_box.Class = class_tag
         one_box.probability = float(track.score)
         one_box.xmin = int(track.box[0])
         one_box.ymin = int(track.box[1])
@@ -52,24 +50,26 @@ class darknet_tracking:
         boxes = BoundingBoxes()
         boxes.header = boxes_msg.header
         i = 0
-        if(len(boxes_msg.bounding_boxes)==0):
+        if(len(tracks)==0):
             self.pub.publish(boxes)
             return
-
+        
         for track in tracks:
-            boxes.bounding_boxes.append(self.create_d_msgs_box(track, boxes_msg.bounding_boxes[i]))
-            i = i+1
+            boxes.bounding_boxes.append(self.create_d_msgs_box(track, self.tag))
 
         self.pub.publish(boxes)
 
     def process_boxes_ros1(self, msg:BoundingBoxes) -> None:
-        detections, class_id, class_name = self.bboxes2out_detections(msg)
+        detections = self.bboxes2out_detections(msg)
+
 
         self.tracker.step(detections)
         tracks = self.tracker.active_tracks(min_steps_alive=3)
 
-        self.publish_d_msgs(tracks, msg)
-        print(detections)
+        # print(tracks)
+        # print(class_name)
+
+        self.publish_d_msgs(tracks,msg)
 
 def ros_main(args = None) -> None:
     darknet_tracking_class = darknet_tracking()

@@ -19,7 +19,7 @@ $ mkdir -p ros1_ws/src
 $ cd ros1_ws/src
 
 # Clone repository
-$ git clone --branch noetic-devel https://github.com/Ar-Ray-code/motpy_ros.git
+$ git clone --branch ros1-noetic https://github.com/Ar-Ray-code/motpy_ros.git
 $ cd motpy_ros
 $ pip3 install requirements.txt
 
@@ -105,7 +105,7 @@ Example launch file : launch/example_srv.launch
 
 Example launch file : launch/darknet_tracking.launch
 
-
+![ann_molcar](pictures_for_readme/ann_molcar.png)
 
 ## Use with Arduino
 

@@ -57,7 +57,10 @@ class mosaic_bbox(mosaic_class):
             print(err)
 
     def process_image_ros1(self, msg):
-        self.frame = cv2.resize(self.bridge.imgmsg_to_cv2(msg,"bgr8"),(self.width,self.height))
+        try:
+            self.frame = cv2.resize(self.bridge.imgmsg_to_cv2(msg,"bgr8"),(self.width,self.height))
+        except Exception as err:
+            print(err)
     
     def process_depth(self,msg):
         self.m_depth_image = cv2.resize(self.bridge.imgmsg_to_cv2(msg, 'passthrough'),(self.width,self.height))
