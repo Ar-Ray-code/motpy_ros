@@ -21,7 +21,7 @@ $ cd ros1_ws/src
 # Clone repository
 $ git clone --branch ros1-noetic https://github.com/Ar-Ray-code/motpy_ros.git
 $ cd motpy_ros
-$ pip3 install requirements.txt
+$ pip3 install -r requirements.txt
 
 $ cd ~/ros1_ws/src
 $ catkin_make
