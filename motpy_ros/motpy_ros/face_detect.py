@@ -15,7 +15,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
+from bboxes_ex_msgs.msg import BoundingBoxes
+from bboxes_ex_msgs.msg import BoundingBox
 
 logger = setup_logger(__name__, 'DEBUG', is_main=True)
 home = expanduser("~")
@@ -41,8 +42,8 @@ class FaceDetector(BaseObjectDetector):
 
         if not os.path.isfile(weights_path) or not os.path.isfile(config_path):
             logger.debug('downloading model...')
-            urlretrieve(self.weights_url, weights_path)
-            urlretrieve(self.config_url, config_path)
+            urlretrieve(weights_url, weights_path)
+            urlretrieve(config_url, config_path)
 
         self.net = cv2.dnn.readNetFromCaffe(config_path, weights_path)
 
@@ -98,13 +99,12 @@ class cv2dnn2darknet(Node):
 
         # ==============================================================
 
-        print( self.width, self.height)
-
         self.sub = self.create_subscription(Image,"camera/color/image_raw",self.process_image_ros2, 10)
         self.pub_image = self.create_publisher(Image,"motpy/image_raw", 10)
         self.pub = self.create_publisher(BoundingBoxes,'bounding_boxes', 10)
 
         # ==============================================================
+        print(self.weights_url, "\n", self.config_url)
 
         self.motpy_detector = FaceDetector(weights_url=self.weights_url, weights_path=self.weights_path, config_url=self.config_url, config_path=self.config_path)
         self.bridge = CvBridge()

@@ -1,18 +1,20 @@
 import os
 from glob import glob
-from setuptools import setup
+from setuptools import setup, find_packages
 
 package_name = 'motpy_ros'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[],
-    py_modules=[
-        'scripts.darknet_tracking',
-        'scripts.face_detect',
-        'scripts.mosaic_bbox',
+    packages=find_packages(),
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name), glob('./launch/*.launch.py')),
     ],
+
     install_requires=['setuptools'],
     zip_safe=True,
     author='Ar-Ray-code',
@@ -31,12 +33,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'darknet_tracking = scripts.darknet_tracking:ros_main',
-            'face_detect = scripts.face_detect:ros_main',
-            'mosaic_bbox = scripts.mosaic_bbox:ros_main',
+            'darknet_tracking = '+ package_name + '.darknet_tracking:ros_main',
+            'face_detect = '+ package_name + '.face_detect:ros_main',
+            'mosaic_bbox = '+ package_name + '.mosaic_bbox:ros_main',
         ],
     },
-    data_files=[
-        (os.path.join('share', package_name), glob('launch/*.launch.py')),
-    ],
 )

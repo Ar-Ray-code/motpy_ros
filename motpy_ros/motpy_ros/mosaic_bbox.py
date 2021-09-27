@@ -11,7 +11,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
-from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
+from bboxes_ex_msgs.msg import BoundingBoxes
+from bboxes_ex_msgs.msg import BoundingBox
 
 class mosaic_class:
     def __mosaic(self, src, ratio=0.1):

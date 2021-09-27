@@ -2,7 +2,9 @@
 from motpy import Detection, MultiObjectTracker
 import rclpy
 from rclpy.node import Node
-from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
+
+from bboxes_ex_msgs.msg import BoundingBoxes
+from bboxes_ex_msgs.msg import BoundingBox
 
 class darknet_tracking(Node):
     def __init__(self) -> None:
