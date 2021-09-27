@@ -1,0 +1,31 @@
+<launch>
+  <!-- Image source (Camera) -->
+  <node pkg="usb_cam" name="camera" type="usb_cam_node">
+    <remap from="/camera/image_raw" to="/camera/color/image_raw"/>
+  </node>
+
+  <!-- Face detect -->
+  <!-- Use YOLOv2 -->
+  <include file="$(find darknet_ros)/launch/darknet_ros.launch">
+    <arg name="network_param_file"    value="$(find darknet_ros)/config/yolov2.yaml"/>
+    <arg name="image" value="/camera/color/image_raw" />
+  </include>
+  
+  <!-- Object Tracking -->
+  <!-- <node pkg="motpy_ros" name="darknet_tracking" type="darknet_tracking.py">
+    <remap from="bounding_boxes" to="/darknet_ros/bounding_boxes"/>
+  </node> -->
+
+  <!-- View as mosaic -->>
+  <!-- <node pkg="motpy_ros" name="mosaic_bbox" type="mosaic_bbox.py">
+    <param name="frame_size/width" value="480"/>
+    <param name="frame_size/height" value="360"/>
+    <remap from="bounding_boxes" to="/tracking_data/bounding_boxes"/>
+    <remap from="motpy/image_raw" to="/camera/color/image_raw"/>
+    <param name="imshow_isshow" value="1"/>
+  </node> -->
+
+  <!-- Rqt_graph -->
+  <node pkg="rqt_graph" name="rqt_graph" type="rqt_graph"/>
+
+</launch>

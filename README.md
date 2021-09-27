@@ -35,9 +35,61 @@ $ colcon build --symlink-install
 Connect your webcam (/dev/video0) and execute the following commands.
 
 ```shell
-$ source /opt/ros/foxy/setup.bash
-$ source ~/ros2_ws/install/local_setup.bash
-$ ros2 launch motpy_ros face_tracking.launch.py
+$ source /opt/ros/noetic/setup.bash
+$ source ~/ros1_ws/devel/setup.bash
+$ roslaunch motpy_ros example_mosaic.launch
+```
+
+![tracking_mosaic](pictures_for_readme/tracking_mosaic.png)
+
+
+
+### The role of each Node is as follows
+
+- camera : Publish the video from the webcam.
+- face_detector : "res10_300x300_ssd_iter_140000.caffemodel" (OpenCV) to detect faces.
+- darknet_tracking : Tracking boundingboxes by motpy.
+- mosaic_bbox : Display tracking image with mosaic.
+
+![Rqt_graph_example_mosaic](pictures_for_readme/Rqt_graph_example_mosaic.png)
+
+
+
+### About topic
+
+Run `$ rostopic echo /tracking_data/bounding_boxes` to check bounding_boxes topic
+
+```bash
+header: 
+  seq: 464
+  stamp: 
+    secs: 1619954372
+    nsecs: 821653734
+  frame_id: "head_camera"
+image_header: 
+  seq: 0
+  stamp: 
+    secs: 0
+    nsecs:         0
+  frame_id: ''
+bounding_boxes: 
+  - 
+    probability: 0.783602034603571
+    xmin: 200
+    ymin: 103
+    xmax: 272
+    ymax: 181
+    id: 728
+    Class: "face"
+  - 
+    probability: 0.8840379995412154
+    xmin: 44
+    ymin: 111
+    xmax: 176
+    ymax: 236
+    id: 3840
+    Class: "face"
+...
 ```
 
 ![tracking_mosaic](pictures_for_readme/tracking_mosaic.png)

@@ -10,12 +10,13 @@ from motpy.core import setup_logger
 from motpy.detector import BaseObjectDetector
 from motpy.testing_viz import draw_detection, draw_track
 
-import rclpy
-from rclpy.node import Node
+import rospy
+
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-
 from darknet_ros_msgs.msg import BoundingBox, BoundingBoxes
+
+from motpy_ros.srv import motpy_bbox
 
 logger = setup_logger(__name__, 'DEBUG', is_main=True)
 home = expanduser("~")
@@ -35,10 +36,19 @@ class FaceDetector(BaseObjectDetector):
                  conf_threshold: float = 0.5) -> None:
         super(FaceDetector, self).__init__()
 
+        self.weights_url = rospy.get_param("~weights_url", WEIGHTS_URL)
+        self.config_url = rospy.get_param("~config_url", CONFIG_URL)
+
+        self.weights_path = rospy.get_param("~weights_path", WEIGHTS_PATH)
+        self.config_path = rospy.get_param("~config_path", CONFIG_PATH)
+
+        print(weights_url, "\n", config_url)
+        print(weights_path, "\n", config_path)
+
         if not os.path.isfile(weights_path) or not os.path.isfile(config_path):
             logger.debug('downloading model...')
-            urlretrieve(weights_url, weights_path)
-            urlretrieve(config_url, config_path)
+            urlretrieve(self.weights_url, weights_path)
+            urlretrieve(self.config_url, config_path)
 
         self.net = cv2.dnn.readNetFromCaffe(config_path, weights_path)
 
@@ -63,7 +73,7 @@ class FaceDetector(BaseObjectDetector):
             
         return out_detections
 
-class motpy2darknet(Node):
+class motpy2darknet:
     def __init__(self):
 
         ## By run() function --------------------------------
@@ -71,67 +81,68 @@ class motpy2darknet(Node):
                             'order_size': 0, 'dim_size': 2,
                             'q_var_pos': 5000., 'r_var_pos': 0.1}
 
+        rospy.init_node('motpy_ros')
+
+        self.width = rospy.get_param("~frame_size/width", 360)
+        self.height = rospy.get_param("~frame_size/height", 240)
+        print( self.width, self.height)
+
         self.dt = 1 / 60.0  # assume 15 fps
         self.tracker = MultiObjectTracker(dt=self.dt, model_spec=self.model_spec)
 
         self.motpy_detector = FaceDetector()
-
-        ## RCLPY 
-        super().__init__('motpy_ros')
-        self.pub = self.create_publisher(BoundingBoxes,"bounding_boxes", 1)
-        self.sub = self.create_subscription(Image,"image_raw",self.process_image_ros2,1)
         self.bridge = CvBridge()
 
-    def create_d_msgs_box(self, track):
+        rospy.Subscriber("image_raw",Image,self.process_image_ros1)
+        self.pub_image = rospy.Publisher("motpy/image_raw",Image,queue_size=1)
+        rospy.spin()
+
+    def darknet2tracks(self, bboxes):
+        out_detections = []
+        for bbox in bboxes.bounding_boxes:
+            out_detections.append(Track(id=str(bbox.id),box=[bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax], score=bbox.probability))
+        return out_detections
+
+    def face_detect2darknet(self, track):
         one_box = BoundingBox()
 
-        one_box.id = int(track.id[:3], 16)
-        one_box.class_id = "face"
-        one_box.probability = float(track.score)
+        one_box.id = 0
+        one_box.Class = "face"
         one_box.xmin = int(track.box[0])
         one_box.ymin = int(track.box[1])
         one_box.xmax = int(track.box[2])
         one_box.ymax = int(track.box[3])
-
+        one_box.probability = float(track.score)
         return one_box
 
-    def publish_d_msgs(self, tracks, img_msg):
-        
-        boxes = BoundingBoxes()
-        boxes.header = img_msg.header
-        
-        for track in tracks:
-            boxes.bounding_boxes.append(self.create_d_msgs_box(track))
-
-        print("boxes--------------------")
-        for box_print in boxes.bounding_boxes:
-            print(box_print)
-        print("\n\n")
-        
-        self.pub.publish(boxes)
-
-    def process_image_ros2(self, msg):
+    def process_image_ros1(self, msg):
         try:
+            detect2darknet = BoundingBoxes()
+
             frame = self.bridge.imgmsg_to_cv2(msg,"bgr8")
-            frame = cv2.resize(frame, dsize=None, fx=0.5, fy=0.5)
+            frame = cv2.resize(frame, dsize=(self.width,self.height))
+            self.pub_image.publish(self.bridge.cv2_to_imgmsg(frame,"bgr8"))
 
-            # # run face detector on current frame
-            
             detections = self.motpy_detector.process_image(frame)
+            print("0")
+            for detection in detections:
+                detect2darknet.bounding_boxes.append(self.face_detect2darknet(detection))
 
-            self.tracker.step(detections)
-            tracks = self.tracker.active_tracks(min_steps_alive=3)
-
-            self.publish_d_msgs(tracks, msg)
-
-            # preview the boxes on frame----------------------------------------
             print(detections)
             for det in detections:
-                draw_detection(frame, det)
+                draw_detection(frame, det)            
+            # tracking ------------------------------------------------------------
+            try:
+                track_faces_module = rospy.ServiceProxy('detect2tracking', motpy_bbox)
+                track_bboxes = track_faces_module(detect2darknet).tracking_bboxes
 
-            for track in tracks:
-                draw_track(frame, track)
-
+                tracks = self.darknet2tracks(track_bboxes)
+                for track in tracks:
+                    draw_track(frame,track)
+            except:
+                pass
+            # preview the boxes on frame----------------------------------------
+            
             cv2.imshow('frame', frame)
             cv2.waitKey(int(1000 * self.dt))
 
@@ -140,13 +151,7 @@ class motpy2darknet(Node):
 
 def ros_main(args = None):
     os.makedirs(download_path, exist_ok=True)
-    rclpy.init(args=args)
-
     motpy2darknet_class = motpy2darknet()
-    rclpy.spin(motpy2darknet_class)
-
-    motpy2darknet_class.destroy_node()
-    rclpy.shutdown()
 
 if __name__ == "__main__":
     ros_main()

@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="uvc_camera" name="camera" type="uvc_camera_node">
+  </node>
+  <node pkg="motpy_ros" name="face_tracking" type="face_tracking.py"/>
+</launch>  
